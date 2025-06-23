@@ -1,1 +1,81 @@
+# -----------------------------
+# TASK 1: DATA CLEANING & PREPROCESSING
+# Using Titanic dataset (offline version)
+# -----------------------------
 
+# Import libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+# Step 1: Load dataset from CSV (downloaded manually)
+df = pd.read_csv("titanic.csv")  # Make sure the file is in your working directory
+print("Initial Data:")
+print(df.head())
+
+# Step 2: Explore basic info
+print("\nDataset Info:")
+print(df.info())
+
+print("\nMissing Values:")
+print(df.isnull().sum())
+
+print("\nStatistical Summary:")
+print(df.describe())
+
+# Step 3: Handle missing values
+# Fill age with median
+df['Age'] = df['Age'].fillna(df['Age'].median())
+
+# Fill embarked with mode
+df['Embarked'] = df['Embarked'].fillna(df['Embarked'].mode()[0])
+
+# Drop cabin (equivalent to 'deck' in seaborn), too many missing values
+df = df.drop(columns=['Cabin'])
+
+# Drop any rows with remaining null values
+df = df.dropna()
+
+print("\nMissing Values After Cleaning:")
+print(df.isnull().sum())
+
+# Step 4: Convert categorical to numerical
+# Encode 'Sex' using LabelEncoder
+le = LabelEncoder()
+df['Sex'] = le.fit_transform(df['Sex'])  # male=1, female=0
+
+# One-hot encode 'Embarked' and 'Pclass'
+df = pd.get_dummies(df, columns=['Embarked', 'Pclass'], drop_first=True)
+
+print("\nData after Encoding:")
+print(df.head())
+
+# Step 5: Normalize/Standardize numerical columns
+num_cols = ['Age', 'Fare', 'SibSp', 'Parch']
+scaler = StandardScaler()
+df[num_cols] = scaler.fit_transform(df[num_cols])
+
+print("\nStandardized Numerical Columns:")
+print(df[num_cols].head())
+
+# Step 6: Visualize and remove outliers (e.g., from 'Fare')
+for col in num_cols:
+    plt.figure(figsize=(5, 2))
+    sns.boxplot(x=df[col])
+    plt.title(f"Boxplot for {col}")
+    plt.show()
+
+# Remove outliers using IQR for 'Fare'
+Q1 = df['Fare'].quantile(0.25)
+Q3 = df['Fare'].quantile(0.75)
+IQR = Q3 - Q1
+df = df[(df['Fare'] >= Q1 - 1.5 * IQR) & (df['Fare'] <= Q3 + 1.5 * IQR)]
+
+# Final check
+print("\nFinal Cleaned Dataset Info:")
+print(df.info())
+
+print("\nFinal Cleaned Dataset Preview:")
+print(df.head())
