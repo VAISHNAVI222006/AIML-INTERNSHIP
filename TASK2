@@ -3,12 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Optional: Set seaborn style for cleaner visuals
+# Set plot style
 sns.set(style='whitegrid')
 
-# Step 2: Load Dataset
-# Replace 'your_dataset.csv' with your actual file name
-df = pd.read_csv('your_dataset.csv')
+# Step 2: Load the built-in Iris dataset
+df = sns.load_dataset('iris')  # contains 150 rows, 5 columns
 
 # Step 3: Summary Statistics
 print("Data Info:")
@@ -20,17 +19,17 @@ print(df.isnull().sum())
 
 # Step 4: Histograms of Numeric Features
 print("\nGenerating Histograms...")
-df.hist(bins=20, figsize=(15, 10), edgecolor='black')
-plt.suptitle("Histograms of Numeric Features")
+df.hist(bins=20, figsize=(12, 8), edgecolor='black')
+plt.suptitle("Histograms of Iris Numeric Features")
 plt.tight_layout()
 plt.show()
 
 # Step 5: Boxplots for Numeric Features
 print("\nGenerating Boxplots...")
 numeric_cols = df.select_dtypes(include='number').columns
-plt.figure(figsize=(15, 8))
+plt.figure(figsize=(12, 6))
 for i, col in enumerate(numeric_cols):
-    plt.subplot(2, len(numeric_cols)//2 + 1, i + 1)
+    plt.subplot(2, 2, i + 1)
     sns.boxplot(y=df[col])
     plt.title(col)
 plt.tight_layout()
@@ -38,20 +37,20 @@ plt.show()
 
 # Step 6: Correlation Matrix Heatmap
 print("\nGenerating Correlation Heatmap...")
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(8, 6))
 sns.heatmap(df.corr(), annot=True, cmap='coolwarm', fmt=".2f")
-plt.title("Correlation Matrix")
+plt.title("Correlation Matrix of Iris Features")
 plt.tight_layout()
 plt.show()
 
 # Step 7: Pairplot for Feature Relationships
 print("\nGenerating Pairplot...")
-sns.pairplot(df[numeric_cols])
-plt.suptitle("Pairplot of Numeric Features", y=1.02)
+sns.pairplot(df, hue='species', diag_kind='kde')
+plt.suptitle("Pairplot of Iris Features", y=1.02)
 plt.show()
 
 # Step 8: Detect Outliers (1st and 99th percentile)
-print("\nOutlier Detection (beyond 1st and 99th percentile):")
+print("\nOutlier Detection (outside 1st and 99th percentiles):")
 for col in numeric_cols:
     lower = df[col].quantile(0.01)
     upper = df[col].quantile(0.99)
@@ -59,9 +58,8 @@ for col in numeric_cols:
     if not outliers.empty:
         print(f"- {col} has {len(outliers)} outliers.")
 
-# Step 9: Scatterplot Example (if applicable)
-# Replace 'feature1' and 'feature2' with actual column names
-# Uncomment and edit the lines below based on your dataset
-# sns.scatterplot(x='feature1', y='feature2', data=df)
-# plt.title("Feature1 vs Feature2")
-# plt.show()
+# Step 9: Example: Scatterplot Between Features
+print("\nGenerating Scatterplot (Sepal Length vs Sepal Width)...")
+sns.scatterplot(x='sepal_length', y='sepal_width', hue='species', data=df)
+plt.title("Sepal Length vs Sepal Width")
+plt.show()
