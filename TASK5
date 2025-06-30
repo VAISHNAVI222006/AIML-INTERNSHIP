@@ -1,1 +1,95 @@
+# Import required libraries
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import load_iris, fetch_california_housing
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, export_graphviz
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import accuracy_score, mean_squared_error
+import graphviz
+
+# -------------------------------
+# PART 1: DECISION TREE - CLASSIFICATION
+# -------------------------------
+
+# Load iris dataset
+iris = load_iris()
+X_cls, y_cls = iris.data, iris.target
+Xc_train, Xc_test, yc_train, yc_test = train_test_split(X_cls, y_cls, test_size=0.3, random_state=42)
+
+# Train Decision Tree Classifier
+dt_clf = DecisionTreeClassifier(max_depth=3, random_state=42)
+dt_clf.fit(Xc_train, yc_train)
+
+# Predict and evaluate
+yc_pred = dt_clf.predict(Xc_test)
+print("Decision Tree Classifier Accuracy:", accuracy_score(yc_test, yc_pred))
+
+# Visualize the decision tree
+dot_data = export_graphviz(
+    dt_clf,
+    out_file=None,
+    feature_names=iris.feature_names,
+    class_names=iris.target_names,
+    filled=True,
+    rounded=True,
+    special_characters=True
+)
+graph = graphviz.Source(dot_data)
+graph.render("decision_tree_iris", format="png", cleanup=False)  # Saves as PNG
+graph.view()
+
+# -------------------------------
+# PART 2: RANDOM FOREST - CLASSIFICATION
+# -------------------------------
+
+rf_clf = RandomForestClassifier(n_estimators=100, max_depth=3, random_state=42)
+rf_clf.fit(Xc_train, yc_train)
+yc_rf_pred = rf_clf.predict(Xc_test)
+print("Random Forest Classifier Accuracy:", accuracy_score(yc_test, yc_rf_pred))
+
+# Feature importance plot
+plt.figure(figsize=(8, 4))
+sns.barplot(x=rf_clf.feature_importances_, y=iris.feature_names)
+plt.title("Random Forest Feature Importances (Classification)")
+plt.xlabel("Importance")
+plt.ylabel("Features")
+plt.tight_layout()
+plt.show()
+
+# -------------------------------
+# PART 3: DECISION TREE - REGRESSION
+# -------------------------------
+
+# Load California housing dataset
+california = fetch_california_housing()
+X_reg, y_reg = california.data, california.target
+Xr_train, Xr_test, yr_train, yr_test = train_test_split(X_reg, y_reg, test_size=0.3, random_state=42)
+
+# Train Decision Tree Regressor
+dt_reg = DecisionTreeRegressor(max_depth=5, random_state=42)
+dt_reg.fit(Xr_train, yr_train)
+
+# Predict and evaluate
+yr_pred = dt_reg.predict(Xr_test)
+print("Decision Tree Regressor MSE:", mean_squared_error(yr_test, yr_pred))
+
+# -------------------------------
+# PART 4: RANDOM FOREST - REGRESSION
+# -------------------------------
+
+rf_reg = RandomForestRegressor(n_estimators=100, max_depth=5, random_state=42)
+rf_reg.fit(Xr_train, yr_train)
+yr_rf_pred = rf_reg.predict(Xr_test)
+print("Random Forest Regressor MSE:", mean_squared_error(yr_test, yr_rf_pred))
+
+# Feature importance plot
+plt.figure(figsize=(10, 5))
+sns.barplot(x=rf_reg.feature_importances_, y=california.feature_names)
+plt.title("Random Forest Feature Importances (Regression)")
+plt.xlabel("Importance")
+plt.ylabel("Features")
+plt.tight_layout()
+plt.show()
 
