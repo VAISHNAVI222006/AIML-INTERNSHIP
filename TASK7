@@ -1,1 +1,85 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, confusion_matrix
+
+# Step 1: Load dataset (Iris - 2 classes, 2 features)
+iris = datasets.load_iris()
+X = iris.data[:, :2]  # only first two features
+y = iris.target
+
+# Keep only two classes for binary classification
+X = X[y != 2]
+y = y[y != 2]
+
+# Step 2: Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42
+)
+
+# Step 3: Feature scaling
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Step 4: Train Linear SVM
+svm_linear = SVC(kernel='linear', C=1)
+svm_linear.fit(X_train, y_train)
+
+# Step 5: Train RBF SVM
+svm_rbf = SVC(kernel='rbf', C=1, gamma='scale')
+svm_rbf.fit(X_train, y_train)
+
+# Step 6: Evaluation
+print("===== Linear SVM Evaluation =====")
+print(confusion_matrix(y_test, svm_linear.predict(X_test)))
+print(classification_report(y_test, svm_linear.predict(X_test)))
+
+print("===== RBF SVM Evaluation =====")
+print(confusion_matrix(y_test, svm_rbf.predict(X_test)))
+print(classification_report(y_test, svm_rbf.predict(X_test)))
+
+# Step 7: Visualization function
+def plot_decision_boundary(model, X, y, title):
+    h = 0.02
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(
+        np.arange(x_min, x_max, h),
+        np.arange(y_min, y_max, h)
+    )
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+
+    plt.figure()
+    plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.coolwarm, edgecolors='k')
+    plt.xlabel("Feature 1")
+    plt.ylabel("Feature 2")
+    plt.title(title)
+    plt.show()
+
+# Step 8: Plot decision boundaries
+plot_decision_boundary(svm_linear, X_test, y_test, "Linear SVM")
+plot_decision_boundary(svm_rbf, X_test, y_test, "RBF SVM")
+
+# Step 9: Hyperparameter Tuning with GridSearchCV
+param_grid = {
+    'C': [0.1, 1, 10, 100],
+    'gamma': ['scale', 1, 0.1, 0.01],
+    'kernel': ['rbf']
+}
+
+grid = GridSearchCV(SVC(), param_grid, refit=True, cv=5)
+grid.fit(X_train, y_train)
+
+print("===== Best Hyperparameters from Grid Search =====")
+print("Best Parameters:", grid.best_params_)
+print("Best Cross-Validation Score:", grid.best_score_)
+
+# Plot best model's decision boundary
+plot_decision_boundary(grid.best_estimator_, X_test, y_test, "Tuned RBF 
 
