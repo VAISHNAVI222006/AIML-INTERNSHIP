@@ -1,1 +1,97 @@
+import os
+import cv2
+import numpy as np
+import winsound  # Use 'playsound' for non-Windows
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from sklearn.model_selection import train_test_split
+
+# --------------------- STEP 1: Load & Preprocess Dataset ---------------------
+print("[INFO] Loading dataset...")
+
+data = []
+labels = []
+categories = ['with_mask', 'without_mask']
+
+for category in categories:
+    path = os.path.join("dataset", category)
+    label = categories.index(category)
+    for img in os.listdir(path):
+        try:
+            img_array = cv2.imread(os.path.join(path, img))
+            resized_img = cv2.resize(img_array, (100, 100))
+            data.append(resized_img)
+            labels.append(label)
+        except Exception as e:
+            print(f"Error reading image: {img}")
+
+X = np.array(data) / 255.0
+y = to_categorical(labels)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+print("[INFO] Dataset loaded. Total samples:", len(data))
+
+# --------------------- STEP 2: Build & Train CNN Model ---------------------
+print("[INFO] Building and training model...")
+
+model = Sequential([
+    Conv2D(32, (3,3), activation='relu', input_shape=(100, 100, 3)),
+    MaxPooling2D(2,2),
+    Conv2D(64, (3,3), activation='relu'),
+    MaxPooling2D(2,2),
+    Flatten(),
+    Dense(128, activation='relu'),
+    Dense(2, activation='softmax')
+])
+
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
+model.save("mask_detector.model")
+print("[INFO] Model trained and saved as 'mask_detector.model'.")
+
+# --------------------- STEP 3: Real-time Detection ---------------------
+print("[INFO] Starting real-time detection...")
+
+model = load_model("mask_detector.model")
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+cap = cv2.VideoCapture(0)
+
+while True:
+    success, frame = cap.read()
+    if not success:
+        break
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4)
+
+    for (x, y, w, h) in faces:
+        face = frame[y:y+h, x:x+w]
+        resized_face = cv2.resize(face, (100, 100))
+        normalized_face = resized_face / 255.0
+        reshaped_face = np.expand_dims(normalized_face, axis=0)
+
+        prediction = model.predict(reshaped_face)
+        label = np.argmax(prediction)
+
+        if label == 0:
+            label_text = "Mask"
+            color = (0, 255, 0)
+        else:
+            label_text = "No Mask"
+            color = (0, 0, 255)
+            winsound.Beep(1000, 200)  # Alert sound (Windows only)
+
+        cv2.putText(frame, label_text, (x, y - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+        cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+
+    cv2.imshow("Face Mask Detector", frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        print("[INFO] Exiting...")
+        break
+
+cap.release()
+cv2.destroyAllWindows()
 
